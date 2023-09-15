@@ -32,7 +32,7 @@ class CustomNeuralNetwork(tf.keras.Sequential):
         ## PDE_9 AND PDE_AC:
         """# Store normalization bounds
         self.lower_bound = lower_bound
-        self.upper_bound = upper_bound
+        self.upper_bound = upper_bound"""
 
         # Define the network architecture
         self._build_network_architecture(layers)
@@ -44,21 +44,25 @@ class CustomNeuralNetwork(tf.keras.Sequential):
         for i, width in enumerate(layers):
             if i != 1:
                 self.sizes_w.append(int(width * layers[1]))
-                self.sizes_b.append(int(width if i != 0 else layers[1]))"""
+                self.sizes_b.append(int(width if i != 0 else layers[1]))
 #PDE_HEAT:
     def _build_network_architecture(self, layers):
         # Define the architecture of the neural network
         # input layers:
         self.add(tf.keras.layers.InputLayer(input_shape=(8,)))
+
         # Lambda layer for normalization
         self.add(tf.keras.layers.Lambda(
             lambda X: 2.0 * (tf.cast(X, tf.float32) - self.lower_bound) / (self.upper_bound - self.lower_bound) - 1.0))
+
         # Store the input shapes for each layer
         self.input_shapes = [layers[0]]
+
         # hidden layers
         for width in layers[1:-1]:
-            self.add(tf.keras.layers.Dense(width, activation=tf.nn.relu, kernel_initializer="orthogonal"))
+            self.add(tf.keras.layers.Dense(width, activation=tf.nn.tanh, kernel_initializer="orthogonal"))
             self.input_shapes.append(width)
+
         # output layers
         self.add(tf.keras.layers.Dense(layers[-1], activation=None, kernel_initializer="orthogonal"))
 
@@ -90,7 +94,7 @@ class CustomNeuralNetwork(tf.keras.Sequential):
 
         # hidden layers
         for width in layers[1:-1]:
-            self.add(tf.keras.layers.Dense(width, activation=tf.nn.tanh , kernel_initializer="orthogonal"))
+            self.add(tf.keras.layers.Dense(width, activation=tf.nn.tanh, kernel_initializer="orthogonal"))
             self.input_shapes.append(width)
 
         # output layers
@@ -154,17 +158,11 @@ class PINN():
         self.elapsed_t = 0
 
     def loss_and_flat_grad(self, w):
+
         with tf.GradientTape() as tape:
             self.model.set_weights(w)
             loss_value = self.loss()
-        if loss_value is None:
-            raise ValueError("Loss value is None. Check your loss function.")
-
         grad = tape.gradient(loss_value, self.model.trainable_variables)
-
-        if any(g is None for g in grad):
-            raise ValueError("Gradient contains None values. Check your model architecture and input data.")
-
         grad_flat = []
         for g in grad:
             grad_flat.append(tf.reshape(g, [-1]))

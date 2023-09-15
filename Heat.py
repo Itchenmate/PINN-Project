@@ -27,7 +27,7 @@ from PDE_HEAT import HeatPINN
 import numpy as np
 
 
-def simulate_heat_equation(x, t, coeffs=None, f=None, alpha=1, dt=0.001):
+def simulate_heat_equation(x, t, coeffs=None, f=None, alpha=0.01, dt=0.001):
     """
     Simulate the heat equation using the finite difference method.
 
@@ -121,8 +121,8 @@ if __name__ == "__main__":
     model = HeatPINN(x0, u0, coeffs, x_ub, x_lb, tb, X_f[:, 0:1], X_f[:, 1:2], X_star, ub, lb, layers)
 
     ##### Set the number of iterations ( 0 for off)
-    adam_iterations = 10  # Number of training steps
-    lbfgs_max_iterations = 20  # Max iterations for lbfgs
+    adam_iterations = 1000  # Number of training steps
+    lbfgs_max_iterations = 2000  # Max iterations for lbfgs
 
 
     ##### Training
@@ -175,4 +175,8 @@ if __name__ == "__main__":
     fig1.savefig('figures/initial_condition_plot.png')
     fig2.savefig('figures/coefficients_distribution.png')
     fig3.savefig('figures/coefficients_histogram.png')
+
+
+
+
 
