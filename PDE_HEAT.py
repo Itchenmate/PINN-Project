@@ -3,11 +3,12 @@
 """
 @author: Chen Gadi & Aviv Burshtein
 """
-
+#%%
 import sys
 import tensorflow as tf
 sys.path.insert(0, 'Utils/')
 from Utils.NeurlNet import CustomNeuralNetwork, PINN
+#%%
 
 class HeatPINN(PINN):
     def __init__(self, x0, u0, coeffs, x_ub, x_lb, t_b, x_f, t_f, X_star, ub, lb, layers):
@@ -45,19 +46,19 @@ class HeatPINN(PINN):
         loss_0 = tf.reduce_mean(tf.square(u0 - u_pred))
 
         # Loss from heat equation constraint (at the anchor pts)
-        f_val = self.net_f()
+        f_val = self.f_nn()
         loss_f = tf.reduce_mean(tf.square(f_val))
 
         # Loss from boundary conditions
-        u_lb_pred, u_x_lb_pred = self.net_u(self.x_lb, self.t_lb)
-        u_ub_pred, u_x_ub_pred = self.net_u(self.x_ub, self.t_ub)
+        u_lb_pred, u_x_lb_pred = self.u_grad(self.x_lb, self.t_lb)
+        u_ub_pred, u_x_ub_pred = self.u_grad(self.x_ub, self.t_ub)
 
         loss_b = tf.reduce_mean(tf.square(u_lb_pred))+ tf.reduce_mean(tf.square(u_ub_pred)) + \
              tf.reduce_mean(tf.square(u_x_lb_pred))+ tf.reduce_mean(tf.square(u_x_ub_pred))
 
         return loss_0 + loss_f + loss_b
 
-    def net_u(self, x, t):
+    def u_grad(self, x, t):
         with tf.GradientTape() as tape:
             tape.watch(x)
             tape.watch(t)
@@ -69,7 +70,8 @@ class HeatPINN(PINN):
         u_x = tape.gradient(u, x)
 
         return u, u_x
-    def net_f(self):
+
+    def f_nn(self):
         x_f = self.x_f
         t_f = self.t_f
 
@@ -98,12 +100,3 @@ class HeatPINN(PINN):
         X = tf.concat([x, t, coeffs_tiled], axis=1)
         u_pred = self.model(X)
         return u_pred
-
-    """def predict(self, x, t):
-        x = tf.reshape(x, [-1, 1])
-        t = tf.reshape(t, [-1, 1])
-        coeffs_tiled = tf.tile(self.coeffs, [1, tf.shape(x)[0]])
-        coeffs_tiled = tf.transpose(coeffs_tiled)
-        X = tf.concat([x, t, coeffs_tiled], axis=1)
-        u_pred = self.model(X)
-        return u_pred"""

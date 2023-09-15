@@ -49,8 +49,7 @@ class S_PINN(PINN):
         f_real = u_t + 0.5 * v_xx + (u ** 2 + v ** 2) * v
         f_imag = v_t - 0.5 * u_xx - (u ** 2 + v ** 2) * u
         return f_real , f_imag
-
-        
+  
     # Loss definition
     def loss(self):
         x0 = self.x0
@@ -58,31 +57,30 @@ class S_PINN(PINN):
         u0 = self.u0
         v0 = self.v0
 
-        # Loss from supervised learning (at t=0)
+        # Loss from PDE condtion (implicit functions)
         X0 = tf.stack([x0, t0], axis=1)
         u_pred, v_pred = self.model(X0)
         loss_0 = tf.reduce_mean(tf.square(u0 - u_pred)) + tf.reduce_mean(tf.square(v0 - v_pred))
-    
-        # Loss from Schrodinger constraint (at the anchor pts)
+
+        # Loss from initial condtions
         f_real, f_image = self.net_f_uv()
         loss_f = tf.reduce_mean(tf.square(f_real)) + tf.reduce_mean(tf.square(f_image))
           
         # Loss from boundary conditions
-        u_lb_pred, v_lb_pred, u_x_lb_pred, v_x_lb_pred = self.net_uv(self.x_lb, self.t_lb)
-        u_ub_pred, v_ub_pred, u_x_ub_pred, v_x_ub_pred = self.net_uv(self.x_ub, self.t_ub)
+        u_lb_pred, v_lb_pred, u_x_lb_pred, v_x_lb_pred = self.grad_uv(self.x_lb, self.t_lb)
+        u_ub_pred, v_ub_pred, u_x_ub_pred, v_x_ub_pred = self.grad_uv(self.x_ub, self.t_ub)
     
         loss_b = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + tf.reduce_mean(tf.square(v_lb_pred - v_ub_pred)) + \
              tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred)) + tf.reduce_mean(tf.square(v_x_lb_pred - v_x_ub_pred))
     
         return loss_0+ loss_b + loss_f
 
-    def net_uv(self, x, t):
+    def grad_uv(self, x, t):
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(x)
             tape.watch(t)
-            X = tf.stack([x, t], axis=1)  # shape = (N_f,2)
+            X = tf.stack([x, t], axis=1)
             u, v = self.model(X)
-
         u_x = tape.gradient(u, x)
         v_x = tape.gradient(v, x)
 
@@ -91,11 +89,10 @@ class S_PINN(PINN):
     def net_f_uv(self):
         x_f = self.x_f
         t_f = self.t_f
-
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(x_f)
             tape.watch(t_f)
-            X_f = tf.stack([x_f, t_f], axis=1)  # shape = (N_f,2)
+            X_f = tf.stack([x_f, t_f], axis=1)
             u, v = self.model(X_f)
             u_x = tape.gradient(u, x_f)
             v_x = tape.gradient(v, x_f)
@@ -109,16 +106,14 @@ class S_PINN(PINN):
 
         return f_real, f_imag
 
-    # For the final prediction 
     def predict(self, x, t):
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(x)
             tape.watch(t)
-            X = tf.stack([x, t], axis=1)  # shape = (N_f,2)
+            X = tf.stack([x, t], axis=1)
             u, v = self.model(X)
             u_x = tape.gradient(u, x)
             v_x = tape.gradient(v, x)
-
         u_t = tape.gradient(u, t)
         v_t = tape.gradient(v, t)
         u_xx = tape.gradient(u_x, x)

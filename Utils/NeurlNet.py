@@ -141,8 +141,7 @@ class CustomNeuralNetwork(tf.keras.Sequential):
             biases = w[end_weights:end_weights + self.sizes_b[i]]
             weights_biases = [weights, biases]
             layer.set_weights(weights_biases)"""
-
-
+#%%
 class PINN():
     """
     Physics-Informed Neural Network (PINN) class.

@@ -3,6 +3,7 @@
 """
 @author: Chen Gadi & Aviv Burshtein
 """
+#%%
 from matplotlib.backends.backend_pdf import PdfPages
 import pandas as pd
 import os
@@ -33,14 +34,24 @@ if __name__ == "__main__":
     lb = np.array([-1.0, 0.0])
     ub = np.array([1.0, 1.0])
 
-    N0 = 50     # Number of training pts from x=0
-    N_b = 50    # Number of training pts from the boundaries
-    N_f = 10000 # Number of training pts from the inside - collocation pts
+    # Cons. number of pts of the training
+    N0 = 50  # Number of training pts from x=0
+    N_b = 50  # Number of training pts from the boundaries
+    N_f = 20000  # Number of training pts from the PDE(Implicit function)
 
     ########################################
-    ##   DATA PREPARATION                 ##
+    #                                      #
+    #          DATA PREPARATION            #
+    #                                      #
     ########################################
-     
+    """
+ DDD     A   TTTTT   A         PPPP  RRRR  EEEEE PPPP    A   RRRR    A   TTTTT IIIII  OOO  N   N 
+D  D   A A    T    A A        P   P R   R E     P   P  A A  R   R  A A    T     I   O   O NN  N 
+D   D AAAAA   T   AAAAA       PPPP  RRRR  EEEEE PPPP  AAAAA RRRR  AAAAA   T     I   O   O N N N 
+D  D  A   A   T   A   A       P     R R   E     P     A   A R R   A   A   T     I   O   O N  NN 
+DDD   A   A   T   A   A       P     R  RR EEEEE P     A   A R  RR A   A   T   IIIII  OOO  N   N 
+    """
+    # %%
     # Import data
     data = scipy.io.loadmat('Data/AC.mat')
 
@@ -76,16 +87,12 @@ if __name__ == "__main__":
     X0 = np.concatenate((x0, 0*x0), 1) # (x0, 0)
     X_lb = np.concatenate((0*tb + lb[0], tb), 1) # (lb[0], tb)
     X_ub = np.concatenate((0*tb + ub[0], tb), 1) # (ub[0], tb)
-                   
-    # Recap
-    
+
     # Initial condition pts
-    # shape = (N0,1)
     x0 = X0[:,0:1]
     t0 = X0[:,1:2]
 
     # Boundary pts used for constraint
-    # shape = (N_b,1)
     x_lb = X_lb[:,0:1]
     t_lb = X_lb[:,1:2]
 
@@ -93,7 +100,6 @@ if __name__ == "__main__":
     t_ub = X_ub[:,1:2]
         
     # Anchor pts for supervised learning
-    # shape = (N_f,1)
     x_f = X_f[:,0:1]
     t_f = X_f[:,1:2]    
     
@@ -111,13 +117,25 @@ if __name__ == "__main__":
     t_f = tf.convert_to_tensor(t_f[:,0])
     X_star = tf.convert_to_tensor(X_star)
 
-
+    # %%
     layers = [2,50,50,50,1]
     model = AC_PINN(x0, u0, x_ub, x_lb, t_ub, x_f, t_f, X_star, ub, lb, layers)
 
 #%%
 
-    ### TRAINING ###
+    # %%
+    #####################################################
+    #                                                   #
+    #          MODEL TRAINING AND PREDICTION            #
+    #                                                   #
+    #####################################################
+    """
+    TTTT RRRR    A   IIIII N   N IIIII N   N               A   N   N DDD         PPPP  RRRR  EEEEE DDD   IIIII       TTTTT IIIII  OOO  N   N 
+      T   R   R  A A    I   NN  N   I   NN  N              A A  NN  N D  D        P   P R   R E     D  D    I           T     I   O   O NN  N 
+      T   RRRR  AAAAA   I   N N N   I   N N N             AAAAA N N N D   D       PPPP  RRRR  EEEEE D   D   I           T     I   O   O N N N 
+      T   R R   A   A   I   N  NN   I   N  NN             A   A N  NN D  D        P     R R   E     D  D    I           T     I   O   O N  NN 
+      T   R  RR A   A IIIII N   N IIIII N   N             A   A N   N DDD         P     R  RR EEEEE DDD   IIIII         T   IIIII  OOO  N   N 
+    """
 
     adam_iterations = 1000  # Number of training steps
     lbfgs_max_iterations = 2000 # Max iterations for lbfgs
@@ -228,7 +246,6 @@ if __name__ == "__main__":
         pdf.savefig(fig_los_his)
         plt.close()
 
-    # ...
 
 #%%
 #make a csv file for future analysis:

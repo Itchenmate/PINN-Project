@@ -10,7 +10,7 @@ We'll solve the heat equation on the domain  x∈[0,1] and  t∈[0,1]
 using the finite difference method. We'll use Dirichlet boundary conditions and a
 simple initial condition for this example.
 """
-
+# %%
 import numpy as np
 import tensorflow as tf
 from pyDOE import lhs
@@ -26,7 +26,7 @@ from PDE_HEAT import HeatPINN
 
 import numpy as np
 
-
+# %%
 def simulate_heat_equation(x, t, coeffs=None, f=None, alpha=0.01, dt=0.001):
     """
     Simulate the heat equation using the finite difference method.
@@ -114,9 +114,18 @@ if __name__ == "__main__":
         u0 = tf.expand_dims(tf.convert_to_tensor(u0), axis=-1)
 
     # %%
-    ########################################
-    ##   MODEL TRAINING AND PREDICTION    ##
-    ########################################
+        ########################################
+        #                                      #
+        #          DATA PREPARATION            #
+        #                                      #
+        ########################################
+        """
+     DDD     A   TTTTT   A         PPPP  RRRR  EEEEE PPPP    A   RRRR    A   TTTTT IIIII  OOO  N   N 
+    D  D   A A    T    A A        P   P R   R E     P   P  A A  R   R  A A    T     I   O   O NN  N 
+    D   D AAAAA   T   AAAAA       PPPP  RRRR  EEEEE PPPP  AAAAA RRRR  AAAAA   T     I   O   O N N N 
+    D  D  A   A   T   A   A       P     R R   E     P     A   A R R   A   A   T     I   O   O N  NN 
+    DDD   A   A   T   A   A       P     R  RR EEEEE P     A   A R  RR A   A   T   IIIII  OOO  N   N 
+        """
 
     model = HeatPINN(x0, u0, coeffs, x_ub, x_lb, tb, X_f[:, 0:1], X_f[:, 1:2], X_star, ub, lb, layers)
 

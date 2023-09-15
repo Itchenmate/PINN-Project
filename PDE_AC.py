@@ -43,24 +43,22 @@ class AC_PINN(PINN):
         # Loss from supervised learning (at t=0)
         X0 = tf.stack([x0, t0], axis=1)
         u_pred = self.model(X0)
-        y0 = tf.reduce_mean(tf.square(u0 - u_pred))
+        loss_0 = tf.reduce_mean(tf.square(u0 - u_pred))
     
         # Loss from PDE at the collocation pts
-        f_u = self.net_f_u()
-        yPDE = tf.reduce_mean(tf.square(f_u))
+        f_u = self.u_grad()
+        loss_f = tf.reduce_mean(tf.square(f_u))
           
         # Loss from boundary conditions
-        u_lb_pred, u_x_lb_pred = self.net_u(self.x_lb, self.t_lb)
-        u_ub_pred, u_x_ub_pred = self.net_u(self.x_ub, self.t_ub)
+        u_lb_pred, u_x_lb_pred = self.grad_only_u(self.x_lb, self.t_lb)
+        u_ub_pred, u_x_ub_pred = self.grad_only_u(self.x_ub, self.t_ub)
     
-        yB = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
+        loss_b = tf.reduce_mean(tf.square(u_lb_pred - u_ub_pred)) + \
              tf.reduce_mean(tf.square(u_x_lb_pred - u_x_ub_pred))
     
-        return y0 + yPDE + yB
+        return loss_b+loss_f+loss_b
 
-
-    # Needed by the Loss
-    def net_u(self, x, t):
+    def grad_only_u(self, x, t):
     
         with tf.GradientTape() as tape:
             tape.watch(x)
@@ -73,8 +71,7 @@ class AC_PINN(PINN):
 
         return u, u_x
 
-    # Needed by the Loss
-    def net_f_u(self):
+    def u_grad(self):
         x_f = self.x_f
         t_f = self.t_f
         with tf.GradientTape(persistent=True) as tape:    
@@ -88,6 +85,7 @@ class AC_PINN(PINN):
         del tape
         f_u = u_t - 5.0*u + 5.0*u**3 - 0.0001*u_xx
         return f_u
+
     def predict(self, x, t):
         with tf.GradientTape(persistent=True) as tape:
             tape.watch(x)
